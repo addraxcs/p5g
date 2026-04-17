@@ -20,8 +20,7 @@ Thumbs.db
 *.swo
 *~
 .idea/
-.vscode/*
-!.vscode/tasks.json
+.vscode/
 
 # Logs and captures from on-pi debugging
 *.log
