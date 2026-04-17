@@ -1,4 +1,4 @@
-# private-5g-router
+# p5g - Private 5G Router
 
 Turn a Raspberry Pi and a Huawei USB dongle into a private, self-contained 4G/5G WiFi router — with one command.
 
