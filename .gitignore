@@ -1,0 +1,47 @@
+# Secrets and local state — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+*.ppk
+/pap-secrets
+/chap-secrets
+
+# OS / editor noise
+.DS_Store
+.DS_Store?
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/tasks.json
+
+# Logs and captures from on-pi debugging
+*.log
+/tmp/
+state-before.txt
+state-after.txt
+detect.txt
+/tmp-pi-state/
+
+# Rendered-on-pi configs (should stay on the pi, not in git)
+/etc-rendered/
+*.rendered
+
+# Backups from sed -i.bak and similar
+*.bak
+*.orig
+
+# Local planning notes
+planning/
+
+# Claude Code internal files
+.claude/
+CLAUDE.md

@@ -1,0 +1,42 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "shellcheck scripts",
+      "type": "shell",
+      "command": "shellcheck scripts/*.sh",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "check for PENDING placeholders in .env",
+      "type": "shell",
+      "command": "test -f .env && ! grep -nE '^(APN|WAN_IF|LAN_IF)=PENDING' .env || (echo 'PENDING values found in .env'; exit 1)",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "check template placeholders resolved",
+      "type": "shell",
+      "command": "! grep -rnE '__[A-Z_]+__' configs/ || (echo 'Unresolved placeholders above'; exit 1)",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "detail": "Fails if any __PLACEHOLDER__ remains in configs/. Expected to fail pre-render; run on the pi after setup_nat.sh."
+    },
+    {
+      "label": "sync repo to pi",
+      "type": "shell",
+      "command": "rsync -avz --exclude .git --exclude .env ./ ${input:piTarget}:~/private-5g-router/",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "piTarget",
+      "type": "promptString",
+      "description": "pi SSH target, e.g. pi@192.168.1.42",
+      "default": "pi@raspberrypi.local"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# private-5g-router hostapd config.
+# Installed to: /etc/hostapd/hostapd.conf
+#
+# Placeholders (replaced by scripts/setup_ap_mode.sh from .env):
+#   __LAN_IF__          wireless interface, typically wlan0
+#   __WIFI_SSID__       SSID broadcast to clients
+#   __WIFI_PASSPHRASE__ WPA2 passphrase, 8..63 ASCII chars
+#   __WIFI_COUNTRY__    ISO 3166 two-letter code (GB, US, DE, ...)
+#   __WIFI_CHANNEL__    2.4GHz channel (1, 6, 11 are non-overlapping)
+#
+# WPA2-PSK only. No WPA3 here; older clients often lack it.
+# 2.4GHz only. Range matters more than speed on 2.4GHz.
+
+country_code=__WIFI_COUNTRY__
+interface=__LAN_IF__
+driver=nl80211
+
+ssid=__WIFI_SSID__
+hw_mode=g
+channel=__WIFI_CHANNEL__
+
+ieee80211n=1
+ieee80211d=1
+wmm_enabled=1
+
+auth_algs=1
+wpa=2
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+wpa_passphrase=__WIFI_PASSPHRASE__
+
+macaddr_acl=0
+ignore_broadcast_ssid=0

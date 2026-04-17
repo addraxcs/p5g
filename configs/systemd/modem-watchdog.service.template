@@ -1,0 +1,19 @@
+# private-5g-router watchdog service.
+# Installed to: /etc/systemd/system/p5r-watchdog.service
+#
+# Paired with p5r-watchdog.timer below (same directory when rendered).
+#
+# Reads /etc/default/p5r for target + thresholds, pings the target, and
+# if too many consecutive failures accumulate it restarts p5r-wan.service.
+
+[Unit]
+Description=private-5g-router watchdog
+After=p5r-wan.service
+Wants=p5r-wan.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/p5r
+ExecStart=/usr/local/bin/p5r-healthcheck
+# Soft failures should not mark the unit failed; the script handles it.
+SuccessExitStatus=0 1

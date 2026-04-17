@@ -1,0 +1,22 @@
+# private-5g-router modem detection oneshot.
+# Installed to: /etc/systemd/system/p5r-modem-detect.service
+#
+# Runs detect_modem.sh once at boot and writes the classification to
+# /run/p5r/modem-mode so downstream units can branch on it.
+# Enable only if you want automatic path selection at boot. Manual bring-up
+# does not need this service.
+
+[Unit]
+Description=private-5g-router modem detection
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+Before=p5r-wan.service
+
+[Service]
+Type=oneshot
+RuntimeDirectory=p5r
+ExecStart=/usr/local/bin/p5r-detect-modem
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,43 @@
+# private-5g-router dnsmasq config.
+# Installed to: /etc/dnsmasq.d/p5r.conf
+#
+# Placeholders (replaced from .env):
+#   __LAN_IF__            downstream interface (e.g. eth0)
+#   __LAN_GATEWAY__       pi's LAN address (e.g. 10.77.0.1)
+#   __LAN_SUBNET_MASK__   e.g. 255.255.255.0
+#   __DHCP_RANGE_START__  first leasable address
+#   __DHCP_RANGE_END__    last leasable address
+#   __DHCP_LEASE__        lease time (e.g. 12h)
+#
+# Only enable dnsmasq if the pi is the DHCP server for LAN clients. If the pi
+# is feeding an existing router's WAN port, leave dnsmasq disabled.
+
+interface=__LAN_IF__
+# bind-dynamic (not bind-interfaces) so dnsmasq re-binds if the interface
+# comes up, goes down, or briefly flaps during boot (common on Pi OS Trixie
+# when NetworkManager and hostapd are both touching wlan0 in the first few
+# seconds). Same security property: only listens on the named interface.
+bind-dynamic
+except-interface=lo
+
+# DHCP
+dhcp-range=__DHCP_RANGE_START__,__DHCP_RANGE_END__,__LAN_SUBNET_MASK__,__DHCP_LEASE__
+dhcp-option=option:router,__LAN_GATEWAY__
+dhcp-option=option:dns-server,__LAN_GATEWAY__
+dhcp-authoritative
+
+# DNS: forward to public resolvers. Don't read /etc/resolv.conf because
+# systemd-resolved may point at itself.
+no-resolv
+server=1.1.1.1
+server=9.9.9.9
+
+# Local hostname lookup from /etc/hosts.
+expand-hosts
+domain=lan
+local=/lan/
+
+# Cache + logging.
+cache-size=1000
+log-queries=extra
+log-dhcp

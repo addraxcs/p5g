@@ -1,0 +1,33 @@
+# private-5g-router WAN bring-up.
+# Installed to: /etc/systemd/system/p5r-wan.service
+#
+# Placeholders (replaced by scripts/install_services.sh from .env):
+#   __MODE__     "network" or "ppp"
+#   __WAN_IF__   WAN interface (usb0/eth1/ppp0)
+#
+# For mode=network, systemd-networkd handles the interface. This unit becomes
+# a thin wrapper that waits for the interface to come up and exits.
+#
+# For mode=ppp, this unit runs pppd as a long-lived process with restart.
+
+[Unit]
+Description=private-5g-router WAN (__MODE__ mode on __WAN_IF__)
+After=network-pre.target systemd-udev-settle.service
+Wants=network-pre.target
+# PENDING: if modem-detect service is in use, add:
+#   After=p5r-modem-detect.service
+#   Requires=p5r-modem-detect.service
+
+[Service]
+# For network mode this template is replaced with Type=oneshot + ExecStart that
+# waits for the DHCP lease. For ppp mode the installer replaces with:
+#   Type=simple
+#   ExecStart=/usr/sbin/pppd call p5r-wwan nodetach
+#   Restart=on-failure
+#   RestartSec=10
+Type=oneshot
+ExecStart=/usr/local/bin/p5r-wan-up
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,67 @@
+#!/usr/sbin/nft -f
+#
+# private-5g-router nftables ruleset.
+# Installed to: /etc/nftables.conf
+#
+# Placeholders (replaced by scripts/setup_nat.sh from .env):
+#   __WAN_IF__    upstream interface (e.g. usb0, eth1, ppp0)
+#   __LAN_IF__    downstream interface (e.g. eth0, wlan0)
+#   __MGMT_RULE__ SSH allow for MGMT_IF, or a no-op comment
+#
+# Posture:
+#   - WAN inbound: drop everything except related/established.
+#   - LAN inbound: allow local services we host (SSH, DHCP, DNS).
+#   - Forwarding:  LAN -> WAN allowed, WAN -> LAN only for est/related.
+#   - NAT:         masquerade on WAN egress.
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        iif "lo" accept
+        ct state established,related accept
+        ct state invalid drop
+
+        # ICMP is useful for diagnostics; ratelimit to be safe.
+        ip protocol icmp limit rate 20/second accept
+        ip6 nexthdr icmpv6 limit rate 20/second accept
+
+        # LAN side: allow SSH, DHCP server, DNS.
+        iifname "__LAN_IF__" tcp dport 22 accept
+        iifname "__LAN_IF__" udp dport { 53, 67 } accept
+        iifname "__LAN_IF__" tcp dport 53 accept
+
+        # Management side: optional SSH allow on out-of-band iface.
+        __MGMT_RULE__
+
+        # WAN side: drop by default. No inbound services exposed.
+        iifname "__WAN_IF__" drop
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+
+        iifname "__LAN_IF__" oifname "__WAN_IF__" accept
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+
+table ip nat {
+    chain prerouting {
+        type nat hook prerouting priority -100;
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority 100;
+
+        oifname "__WAN_IF__" masquerade
+    }
+}
