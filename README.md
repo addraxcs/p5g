@@ -13,7 +13,7 @@ Turn a Raspberry Pi and a Huawei USB dongle into a private, self-contained 4G/5G
 - A web portal to change your SSID and passphrase without SSH
 - A clean `rollback.sh` that undoes everything if something goes wrong
 
-No cloud accounts. No carrier-owned hardware. No locked equipment. No manual config file editing.
+No cloud accounts. No carrier-owned hardware. No locked equipment. No manual config file editing. Runs off a USB power bank for portable use.
 
 ---
 
@@ -202,6 +202,7 @@ It also exists because setting this up manually is genuinely difficult — Netwo
 | Part | Notes |
 |---|---|
 | Raspberry Pi 4 (2GB+) | Pi 3B+ works; Pi 5 works; Pi Zero not suitable |
+| Portable USB power bank (5V/3A) | Powers the Pi and dongle for field/portable use — any USB-C PD bank works |
 | Huawei E3372 USB dongle | Get an unlocked unit — see below |
 | MicroSD (16GB+, Class 10 / A1) | |
 | USB-C 5V/3A power supply | Official Pi PSU recommended |
