@@ -80,6 +80,24 @@ sudo ./scripts/healthcheck_modem.sh
 
 ---
 
+## Optional: web config portal
+
+To manage WiFi settings (SSID, passphrase, channel, country) from a browser
+without SSH, run:
+
+```sh
+sudo ./scripts/setup_portal.sh
+```
+
+This installs `python3-flask` and starts `p5r-portal.service`. Once running,
+connect a device to the WiFi and open `http://10.77.0.1/` (or whatever
+`LAN_GATEWAY` is set to). Changes take effect immediately and restart hostapd.
+
+The portal is reachable from the LAN only. It has no authentication - treat
+access to the WiFi as equivalent to access to the portal.
+
+---
+
 ## Full rollback
 
 ```sh

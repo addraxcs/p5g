@@ -40,7 +40,10 @@ detect.txt
 
 # Local planning notes
 planning/
+local-test/
 
 # Claude Code internal files
 .claude/
 CLAUDE.md
+context/
+

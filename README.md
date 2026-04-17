@@ -52,6 +52,7 @@ The installer auto-detects which firmware variant your dongle runs and takes the
 - **AP:** hostapd (WPA2-PSK)
 - **DHCP/DNS:** dnsmasq
 - **WAN persistence:** custom systemd service + watchdog timer
+- **Config portal:** Flask app at `http://LAN_GATEWAY/` to change SSID, passphrase, channel, and country without SSH
 
 No ModemManager. No NetworkManager managing the radio. No DHCP clients fighting each other.
 
@@ -72,10 +73,25 @@ Full guide: [docs/setup.md](docs/setup.md)
 
 ```
 .
-├── install.sh              # one-shot interactive installer (start here)
-├── .env.example            # all config variables
-├── configs/                # config templates rendered on the Pi
-├── scripts/                # individual setup scripts (called by install.sh)
+├── install.sh                      # one-shot interactive installer (start here)
+├── .env.example                    # all config variables
+├── configs/                        # config templates rendered on the Pi
+├── scripts/
+│   ├── _lib.sh                     # shared shell functions (load_env, render_template, ...)
+│   ├── detect_modem.sh             # classify E3372 dongle mode
+│   ├── setup_prereqs.sh            # apt install baseline packages
+│   ├── setup_network_mode.sh       # Path A (HiLink) WAN bring-up
+│   ├── setup_ppp_mode.sh           # Path B (PPP) WAN bring-up
+│   ├── setup_ap_mode.sh            # hostapd on wlan0
+│   ├── setup_dhcp.sh               # dnsmasq DHCP + DNS
+│   ├── setup_nat.sh                # sysctl + nftables
+│   ├── install_services.sh         # p5r-wan.service + watchdog timer
+│   ├── setup_portal.sh             # install Flask config portal service
+│   ├── portal.py                   # Flask config portal (SSID, passphrase, channel, country)
+│   ├── gather_state.sh             # read-only network snapshot
+│   ├── healthcheck_modem.sh        # E2E connectivity check
+│   ├── generate_credentials.sh     # generate random WiFi credentials
+│   └── rollback.sh                 # undo all changes
 └── docs/
     ├── setup.md            # setup guide
     ├── flashing.md         # flash Pi OS with Raspberry Pi Imager
@@ -85,6 +101,22 @@ Full guide: [docs/setup.md](docs/setup.md)
     ├── ppp-mode.md         # Path B (PPP) reference
     └── topology-notes.md   # network topology options
 ```
+
+---
+
+## Config portal
+
+After setup, a web portal is available at `http://<LAN_GATEWAY>/` (default: `http://10.77.0.1/`) from any device on the WiFi network. It lets you change the SSID, passphrase, channel, and country code without SSH. Changes restart hostapd immediately.
+
+To install:
+
+```sh
+sudo ./scripts/setup_portal.sh
+```
+
+This installs `python3-flask`, copies the portal to `/usr/local/bin/p5r-portal`, and starts `p5r-portal.service` bound to the LAN gateway IP on port 80.
+
+The portal has no authentication. It is only reachable from within the LAN. Do not expose port 80 on the WAN interface.
 
 ---
 
@@ -102,5 +134,3 @@ Adding any inbound port, NAT rule, or public-facing tunnel is out of scope for t
 ## License
 
 MIT
-# p5g
-# p5g

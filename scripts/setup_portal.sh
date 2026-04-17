@@ -9,6 +9,11 @@ require_root
 load_env
 require_var LAN_GATEWAY
 
+log "installing flask"
+if ! python3 -c "import flask" 2>/dev/null; then
+    apt-get install -y python3-flask
+fi
+
 PORTAL_BIN=/usr/local/bin/p5r-portal
 
 log "installing portal script to ${PORTAL_BIN}"

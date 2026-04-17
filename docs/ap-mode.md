@@ -89,6 +89,40 @@ ping 1.1.1.1                         # via NAT
 curl -v https://example.com          # DNS + NAT + WAN
 ```
 
+## Web config portal
+
+`scripts/portal.py` is a Flask app that lets you change WiFi settings from a
+browser without SSH. Install it with:
+
+```sh
+sudo ./scripts/setup_portal.sh
+```
+
+Once the `p5r-portal.service` is running, open `http://10.77.0.1/` from any
+device on the WiFi. The portal exposes:
+
+| Field | Validation |
+|---|---|
+| SSID | 1-32 characters, required |
+| Passphrase | 8-63 characters; leave blank to keep current |
+| Channel | 1-13 (2.4 GHz) |
+| Country code | ISO 3166-1 alpha-2 (e.g. GB, US, DE) |
+
+Saving writes `/etc/hostapd/hostapd.conf` and restarts hostapd. Clients will
+momentarily disconnect and need to reconnect.
+
+The portal is bound to `LAN_GATEWAY` (default `10.77.0.1`), not the WAN
+interface. It is not reachable from the internet.
+
+To check portal status:
+
+```sh
+systemctl status p5r-portal.service
+journalctl -u p5r-portal.service -n 30 --no-pager
+```
+
+---
+
 ## Management access during and after setup
 
 The default and recommended method is **SSH over eth0**. Set `MGMT_IF=eth0`
