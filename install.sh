@@ -200,6 +200,7 @@ run_stage "WiFi access point"  "${SCRIPT_DIR}/scripts/setup_ap_mode.sh"
 run_stage "DHCP and DNS"       "${SCRIPT_DIR}/scripts/setup_dhcp.sh"
 run_stage "NAT and firewall"   "${SCRIPT_DIR}/scripts/setup_nat.sh"
 run_stage "Boot services"      "${SCRIPT_DIR}/scripts/install_services.sh" "${MODE}"
+run_stage "Config portal"      "${SCRIPT_DIR}/scripts/setup_portal.sh"
 
 # ---------------------------------------------------------------------------
 # End-to-end healthcheck

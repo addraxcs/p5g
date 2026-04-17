@@ -10,7 +10,7 @@ Turn a Raspberry Pi and a Huawei USB dongle into a private, self-contained 4G/5G
 - NAT, DHCP, and DNS — all configured automatically
 - A firewall that drops all inbound connections from the carrier
 - A watchdog that restarts the WAN link on failure
-- A web portal to change your SSID and passphrase without SSH
+- A web portal to change WiFi, VPN, DNS, DHCP, and watchdog settings without SSH
 - A clean `rollback.sh` that undoes everything if something goes wrong
 
 No cloud accounts. No carrier-owned hardware. No locked equipment. No manual config file editing. Runs off a USB power bank for portable use.
@@ -52,7 +52,8 @@ Full guide: [docs/setup.md](docs/setup.md) — Pi flashing: [docs/flashing.md](d
 5. **Configure DHCP + DNS** — dnsmasq on the LAN
 6. **Apply firewall** — nftables ruleset, IPv4 forwarding, NAT
 7. **Install services** — systemd units for WAN persistence + watchdog timer
-8. **Health check** — verifies interface, ping, DNS, and HTTPS end-to-end
+8. **Config portal** — Flask web UI installed and enabled on LAN:80
+9. **Health check** — verifies interface, ping, DNS, and HTTPS end-to-end
 
 Individual scripts in `scripts/` can be run standalone for manual recovery.
 
@@ -153,11 +154,32 @@ Key variables:
 
 ---
 
-## Config portal (optional)
+## Config portal
 
-After setup, run `sudo ./scripts/setup_portal.sh` to install a web UI at `http://10.77.0.1/`. From any device on the WiFi, you can change the SSID, passphrase, channel, and country without SSH.
+Installed automatically by `install.sh`. A web UI is available at `http://10.77.0.1/` from any device on the WiFi — no SSH needed to change settings.
+
+
 
 Protected by HTTP Basic Auth (`PORTAL_USER` / `PORTAL_PASS` in `.env`). Only reachable from within the LAN. Change the default credentials before use.
+
+**WiFi tab** — SSID, passphrase, channel, country. Changes apply immediately; reconnect after saving.
+
+![WiFi portal](docs/screenshots/wifi_portal.png)
+
+**VPN tab** — Enable, disable, or reconfigure WireGuard. Paste a `.conf` file directly (Import mode) or fill in individual fields (Manual mode). Shows tunnel status and last handshake when active.
+
+![VPN portal](docs/screenshots/vpn.png)
+
+**Advanced tab** — Four sections:
+
+![Advanced portal](docs/screenshots/advanced.png)
+
+| Section | What you can change |
+|---|---|
+| DNS servers | Upstream resolvers forwarded by dnsmasq (e.g. `1.1.1.1`, `9.9.9.9`) |
+| DHCP range | Start address, end address, and lease time for LAN clients |
+| Watchdog | Healthcheck target IP and consecutive failure threshold before WAN restart |
+| Logs | Read-only live log tail for hostapd, dnsmasq, wg-quick, and the watchdog |
 
 ---
 
@@ -185,7 +207,9 @@ AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 ```
 
-**This project does not import `.conf` files directly.** Extract the values manually into `.env`:
+**Via the portal (easiest):** open the VPN tab, switch to Import mode, paste your `.conf` file, and click Import. The portal parses it and saves the values to `.env`. Review the fields then click Enable.
+
+**Via `.env` manually:** extract the values into `.env` directly:
 
 | `.conf` field | `.env` variable |
 |---|---|
