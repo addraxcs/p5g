@@ -32,6 +32,7 @@ No cloud accounts. No carrier hardware. No locked equipment. Runs off a USB powe
 - [Repo structure](#repo-structure)
 - [Why this exists](#why-this-exists)
 - [Design direction](#design-direction)
+- [SIM identity considerations](#sim-identity-considerations)
 - [VPN and SIM usage](#vpn-and-sim-usage)
 - [Related work](#related-work-in-progress)
 - [License](#license)
@@ -331,6 +332,16 @@ Most networking tooling assumes you trust the infrastructure you are connecting 
 The goal is to establish a known-good network layer before any device makes contact with external infrastructure — carrier, cloud, or otherwise. That means controlling the uplink, controlling the firewall, and keeping the setup environment local and auditable.
 
 No cloud dependencies, no remote configuration, no services exposed to the WAN side. The router is a boundary you control. Everything inside it is yours.
+
+---
+
+## SIM identity considerations
+
+The SIM is part of the trust boundary. A carrier knows your account identity, session timing, and approximate data volume regardless of what runs over the connection — VPN or otherwise.
+
+SIM identification requirements vary by jurisdiction. Some regions permit prepaid SIMs with minimal registration; others mandate full identity verification. The regulatory landscape differs significantly by country and changes over time.
+
+This project does not cover SIM sourcing, registration practices, or anonymity strategies. That is a legal and regulatory question specific to your location, and outside the scope of this repo.
 
 ---
 
