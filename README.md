@@ -1,133 +1,221 @@
-# p5g - Private 5g Portable Router
+# private-5g-router
 
-A Raspberry Pi that turns a 4G/5G USB dongle into a private, self-contained wifi router.
-
-No cloud accounts. No ISP-owned hardware. No carrier-locked equipment.
+Turn a Raspberry Pi and a Huawei USB dongle into a private, self-contained 4G/5G WiFi router — with one command.
 
 ---
 
-## What this is
+## What you get
 
-The Pi takes a 4G/5G uplink from a Huawei USB dongle and shares it as a wifi access point. Downstream clients connect to the Pi's SSID. All traffic is NATed through the dongle. The firewall drops all inbound connections from the WAN side.
+- A WiFi access point backed by a 4G/5G SIM
+- NAT, DHCP, and DNS — all configured automatically
+- A firewall that drops all inbound connections from the carrier
+- A watchdog that restarts the WAN link on failure
+- A web portal to change your SSID and passphrase without SSH
+- A clean `rollback.sh` that undoes everything if something goes wrong
 
-```
-[ 4G/5G SIM ] --> [ Huawei dongle (USB) ] --> [ Raspberry Pi 4 ] --(wifi)--> [ your devices ]
-     WAN                                    hostapd + NAT + DHCP               LAN
-```
-
-The dongle is the only thing that touches the carrier. Downstream devices connect over wifi and share the uplink. A VPN-configured device on the LAN encrypts all its traffic before it leaves the Pi - the carrier sees a tunnel, not destinations.
+No cloud accounts. No carrier-owned hardware. No locked equipment. No manual config file editing.
 
 ---
 
-## Hardware
+## Quick start
 
-| Part | Notes |
+**What you need:**
+- Raspberry Pi 4 (2GB+) running Raspberry Pi OS Lite (Bookworm)
+- Huawei E3372 USB dongle (unlocked, any SIM)
+- SSH access to the Pi over ethernet
+
+```sh
+# From your machine — copy the repo to the Pi
+rsync -avz --exclude .git --exclude .env ./ <user>@<pi-ip>:~/private-5g-router/
+
+# On the Pi
+ssh <user>@<pi-ip>
+cd ~/private-5g-router
+chmod +x scripts/*.sh
+sudo ./install.sh
+```
+
+`install.sh` detects your dongle, prompts for WiFi credentials (or generates them), configures everything, and ends with a live connectivity check. Setup takes under 10 minutes on a clean Pi.
+
+Full guide: [docs/setup.md](docs/setup.md) — Pi flashing: [docs/flashing.md](docs/flashing.md)
+
+---
+
+## What the installer does
+
+`install.sh` is the single entry point. It runs these stages in order, printing pass/fail for each:
+
+1. **Detect modem** — classifies your dongle as network mode or PPP mode automatically
+2. **Install packages** — hostapd, dnsmasq, nftables, ppp, usb-modeswitch
+3. **Bring up WAN** — configures the dongle interface (or pppd for PPP mode)
+4. **Set up WiFi AP** — hostapd on wlan0, WPA2-PSK
+5. **Configure DHCP + DNS** — dnsmasq on the LAN
+6. **Apply firewall** — nftables ruleset, IPv4 forwarding, NAT
+7. **Install services** — systemd units for WAN persistence + watchdog timer
+8. **Health check** — verifies interface, ping, DNS, and HTTPS end-to-end
+
+Individual scripts in `scripts/` can be run standalone for manual recovery.
+
+---
+
+## Who this is for
+
+**Good fit:**
+- Developers or researchers who need mobile connectivity they fully control
+- People running a Pi on a remote site (field, vehicle, off-grid)
+- Anyone who wants a fully auditable firewall rather than a consumer router
+- People who want to understand what their router is actually doing
+
+**Not a good fit:**
+- Production infrastructure (this is a personal/lab project)
+- Setups requiring a public-facing IP or open inbound ports
+- Non-technical users expecting a consumer router experience
+
+---
+
+## Security model
+
+The firewall posture is **deny by default on WAN**:
+
+| Direction | Policy |
 |---|---|
-| Raspberry Pi 4 (2GB+) | Pi 3B+ works but 4 is preferred |
-| Huawei E3372 USB dongle | See unlocked models below |
-| MicroSD card (16GB+) | Class 10 or A1 rated |
-| USB-C 5V/3A power supply | Official Pi PSU recommended |
-| Portable rechargeable PSU | Coming soon |
+| WAN → Pi (inbound) | Drop |
+| WAN → LAN (forwarded) | Drop (except established) |
+| LAN → WAN | Allow (NAT) |
+| LAN → Pi (SSH, DHCP, DNS) | Allow |
 
-### Unlocked Huawei dongle models
+No services listen on the WAN interface. SSH is only permitted on the management interface (`eth0`). The nftables ruleset is a single auditable file at `/etc/nftables.conf`.
 
-The E3372 comes in two firmware variants - HiLink (network mode) and stick (PPP mode). Both are supported. Buy an unlocked unit that works with any SIM:
-
-- **E3372h-320** - global unlocked, most widely available, HiLink firmware
-- **E3372h-607** - unlocked, HiLink firmware, good availability
-- **E3372s-153** - unlocked, stick/PPP firmware, less common
-- **E3372h-153** - check listing carefully, some units are unlocked, some carrier-locked
-
-Avoid carrier-branded units (EE, Vodafone, Three branded packaging). Buy from a seller that explicitly states "unlocked" or "SIM-free".
-
-The installer auto-detects which firmware variant your dongle runs and takes the right path. You do not need to know in advance.
+Opening any inbound port or creating public-facing access is out of scope for this repo. Fork it if you need that, and flag it explicitly.
 
 ---
 
-## Software stack
+## Architecture
 
-- **OS:** Raspberry Pi OS Bookworm (32 or 64-bit lite)
-- **Firewall:** nftables (single-file ruleset, easy to audit)
-- **Networking:** systemd-networkd for interface addressing
-- **AP:** hostapd (WPA2-PSK)
-- **DHCP/DNS:** dnsmasq
-- **WAN persistence:** custom systemd service + watchdog timer
-- **Config portal:** Flask app at `http://LAN_GATEWAY/` to change SSID, passphrase, channel, and country without SSH
+```
+[ SIM card ]
+     |
+[ Huawei E3372 USB dongle ]   <-- auto-detected as network mode or PPP mode
+     |
+[ Raspberry Pi ]
+  ├── eth0  (MGMT)    — SSH during setup; never NATed
+  ├── wlan0 (LAN AP)  — hostapd, WPA2-PSK; dnsmasq DHCP/DNS; nftables NAT
+  └── usb0 / eth1 / ppp0 (WAN)  — dongle interface; firewall drops all inbound
+```
 
-No ModemManager. No NetworkManager managing the radio. No DHCP clients fighting each other.
+**Two modem paths, auto-detected:**
+- **Path A (network mode):** dongle appears as `usb0`/`eth1`, DHCP via systemd-networkd
+- **Path B (PPP mode):** dongle appears as `/dev/ttyUSB*`, driven by pppd + chat script
 
----
-
-## Setup
-
-Full guide: [docs/setup.md](docs/setup.md)
-
-1. Configure / Test SIM in a phone first
-2. Flash Pi OS - see [docs/flashing.md](docs/flashing.md)
-3. Copy this repo to the Pi over SSH
-4. Run `sudo ./install.sh` - detects dongle, prompts for credentials, configures everything
+You do not need to know which mode your dongle runs. `detect_modem.sh` figures it out.
 
 ---
 
-## Repository layout
+## Repo structure
 
 ```
 .
-├── install.sh                      # one-shot interactive installer (start here)
-├── .env.example                    # all config variables
-├── configs/                        # config templates rendered on the Pi
+├── install.sh              # start here — interactive one-shot setup
+├── .env.example            # all config variables with descriptions
 ├── scripts/
-│   ├── _lib.sh                     # shared shell functions (load_env, render_template, ...)
-│   ├── detect_modem.sh             # classify E3372 dongle mode
-│   ├── setup_prereqs.sh            # apt install baseline packages
-│   ├── setup_network_mode.sh       # Path A (HiLink) WAN bring-up
-│   ├── setup_ppp_mode.sh           # Path B (PPP) WAN bring-up
-│   ├── setup_ap_mode.sh            # hostapd on wlan0
-│   ├── setup_dhcp.sh               # dnsmasq DHCP + DNS
-│   ├── setup_nat.sh                # sysctl + nftables
-│   ├── install_services.sh         # p5r-wan.service + watchdog timer
-│   ├── setup_portal.sh             # install Flask config portal service
-│   ├── portal.py                   # Flask config portal (SSID, passphrase, channel, country)
-│   ├── gather_state.sh             # read-only network snapshot
-│   ├── healthcheck_modem.sh        # E2E connectivity check
-│   ├── generate_credentials.sh     # generate random WiFi credentials
-│   └── rollback.sh                 # undo all changes
-└── docs/
-    ├── setup.md            # setup guide
-    ├── flashing.md         # flash Pi OS with Raspberry Pi Imager
-    ├── ap-mode.md          # AP mode details and troubleshooting
-    ├── troubleshooting.md  # modem and WAN troubleshooting
-    ├── network-mode.md     # Path A (HiLink) reference
-    ├── ppp-mode.md         # Path B (PPP) reference
-    └── topology-notes.md   # network topology options
+│   ├── detect_modem.sh     # classify dongle — read-only, safe to re-run
+│   ├── setup_*.sh          # one script per setup stage
+│   ├── portal.py           # Flask config portal (SSID, passphrase, channel)
+│   ├── healthcheck_modem.sh
+│   ├── gather_state.sh     # read-only network snapshot for debugging
+│   ├── generate_credentials.sh
+│   └── rollback.sh         # undo everything
+├── configs/                # config templates rendered at install time
+└── docs/                   # setup, troubleshooting, per-mode references
 ```
 
 ---
 
-## Config portal
+## Configuration
 
-After setup, a web portal is available at `http://<LAN_GATEWAY>/` (default: `http://10.77.0.1/`) from any device on the WiFi network. It lets you change the SSID, passphrase, channel, and country code without SSH. Changes restart hostapd immediately.
+`install.sh` writes `.env` for you. You can also copy `.env.example` and fill it in manually before running.
 
-To install:
+Key variables:
 
-```sh
-sudo ./scripts/setup_portal.sh
-```
+| Variable | What it controls | Default |
+|---|---|---|
+| `WIFI_SSID` | Network name | auto-generated |
+| `WIFI_PASSPHRASE` | WPA2 passphrase | auto-generated (12 digits) |
+| `WIFI_COUNTRY` | Regulatory domain | prompted |
+| `WIFI_CHANNEL` | 2.4GHz channel | `6` |
+| `WAN_IF` | Dongle interface | auto-detected |
+| `LAN_GATEWAY` | Pi's LAN IP | `10.77.0.1` |
+| `APN` | Carrier APN (PPP only) | prompted |
+| `PORTAL_USER` / `PORTAL_PASS` | Config portal auth | `admin` / `p5g123` — change this |
 
-This installs `python3-flask`, copies the portal to `/usr/local/bin/p5r-portal`, and starts `p5r-portal.service` bound to the LAN gateway IP on port 80.
-
-The portal is protected by HTTP Basic Auth. Credentials are set via `PORTAL_USER` and `PORTAL_PASS` in `.env` (defaults: `admin` / `p5g123` -- change before deploying). It is only reachable from within the LAN. Do not expose port 80 on the WAN interface.
+`.env` is stored at `0600`. It is gitignored and never committed.
 
 ---
 
-## Security posture
+## Config portal (optional)
 
-- Inbound WAN: **drop**
-- Established connections: **allow**
-- LAN to WAN: **allow** (NAT)
-- No services listening on WAN
+After setup, run `sudo ./scripts/setup_portal.sh` to install a web UI at `http://10.77.0.1/`. From any device on the WiFi, you can change the SSID, passphrase, channel, and country without SSH.
 
-Adding any inbound port, NAT rule, or public-facing tunnel is out of scope for this repo. If you need that, fork and flag it explicitly.
+Protected by HTTP Basic Auth (`PORTAL_USER` / `PORTAL_PASS` in `.env`). Only reachable from within the LAN. Change the default credentials before use.
+
+---
+
+## Advanced usage
+
+| Task | Command |
+|---|---|
+| Check modem mode | `sudo ./scripts/detect_modem.sh` |
+| Run connectivity check | `sudo ./scripts/healthcheck_modem.sh` |
+| Snapshot network state | `sudo ./scripts/gather_state.sh` |
+| Undo everything | `sudo ./scripts/rollback.sh` |
+| Run stages manually | see [docs/setup.md](docs/setup.md) |
+
+**Per-mode docs:**
+- [docs/network-mode.md](docs/network-mode.md) — Path A (HiLink)
+- [docs/ppp-mode.md](docs/ppp-mode.md) — Path B (PPP)
+- [docs/troubleshooting.md](docs/troubleshooting.md) — common issues
+
+---
+
+## Known limitations
+
+- **2.4GHz only.** 5GHz requires a USB wifi adapter and additional hostapd config not covered here.
+- **Single WAN.** One dongle. No failover or bonding.
+- **Double NAT on Path A.** The HiLink dongle already does NAT internally. Your Pi gets a `192.168.x.x` address from the dongle, not a public IP. This is fine for most use cases.
+- **PPP mode gives a public IP** (carrier-assigned, dynamic). Better for applications that need a routable address.
+- **No IPv6.** IPv6 forwarding is disabled. Carrier IPv6 prefixes are not routed to the LAN.
+- **WPA2-PSK only.** WPA3 is not configured. Coverage for older clients is the trade-off.
+- **Tested on Raspberry Pi OS Bookworm (Debian 12).** Other Debian-based distros may need adjustments.
+
+---
+
+## Why this exists
+
+Consumer routers are black boxes. Carrier-provided hardware is worse. This project is about running the part of the network you own, on hardware you control, with a firewall you can read in one file.
+
+It also exists because setting this up manually is genuinely difficult — NetworkManager, wpa_supplicant, hostapd, systemd-networkd, and pppd all have opinions about who owns which interface, and they fight. This repo works out those conflicts so you do not have to.
+
+---
+
+## Hardware reference
+
+| Part | Notes |
+|---|---|
+| Raspberry Pi 4 (2GB+) | Pi 3B+ works; Pi 5 works; Pi Zero not suitable |
+| Huawei E3372 USB dongle | Get an unlocked unit — see below |
+| MicroSD (16GB+, Class 10 / A1) | |
+| USB-C 5V/3A power supply | Official Pi PSU recommended |
+
+**Unlocked E3372 models:**
+
+| Model | Firmware | Notes |
+|---|---|---|
+| E3372h-320 | HiLink (Path A) | Most widely available, recommended |
+| E3372h-607 | HiLink (Path A) | Good availability |
+| E3372s-153 | Stick/PPP (Path B) | Less common |
+| E3372h-153 | Either | Check listing — some units are carrier-locked |
+
+Avoid carrier-branded units (EE, Vodafone, Three packaging). Look for "unlocked" or "SIM-free" in the listing.
 
 ---
 
