@@ -44,8 +44,19 @@ render_template \
     WG_ALLOWED_IPS WG_PERSISTENT_KEEPALIVE
 chmod 0600 "/etc/wireguard/${VPN_IF}.conf"
 
-# 3. Enable and start the tunnel
+# 3. Ensure wg-quick starts after nftables so the kill-switch ruleset is
+# active before the tunnel comes up. Without this ordering, a reboot race
+# could briefly forward LAN traffic to WAN before wg0 is ready.
+mkdir -p "/etc/systemd/system/wg-quick@${VPN_IF}.service.d"
+cat >"/etc/systemd/system/wg-quick@${VPN_IF}.service.d/10-p5r-ordering.conf" <<EOF
+[Unit]
+After=nftables.service
+Wants=nftables.service
+EOF
+chmod 0644 "/etc/systemd/system/wg-quick@${VPN_IF}.service.d/10-p5r-ordering.conf"
+
 log "enabling wg-quick@${VPN_IF}"
+systemctl daemon-reload
 systemctl enable "wg-quick@${VPN_IF}"
 systemctl restart "wg-quick@${VPN_IF}"
 

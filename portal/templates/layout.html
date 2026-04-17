@@ -60,6 +60,7 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0}
 <nav>
   <a href="/" class="{{ 'active' if active_tab == 'wifi' else '' }}">WiFi</a>
   <a href="/vpn" class="{{ 'active' if active_tab == 'vpn' else '' }}">VPN <span class="badge {{ 'up' if vpn_active else 'down' }}">{{ 'ON' if vpn_active else 'OFF' }}</span></a>
+  <a href="/advanced" class="{{ 'active' if active_tab == 'advanced' else '' }}">Advanced</a>
 </nav>
 {% for msg in get_flashed_messages(category_filter=["ok"]) %}
 <p class="ok">{{ msg }}</p>

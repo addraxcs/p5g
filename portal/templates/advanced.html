@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Advanced</h2>
+<p class="sub">DNS, DHCP, watchdog, and service logs.</p>
+
+<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">DNS Servers</h3>
+<form method="POST" action="/advanced">
+  <input type="hidden" name="action" value="dns">
+  <label>Primary DNS</label>
+  <input name="dns1" value="{{ dns1 }}" placeholder="1.1.1.1" autocomplete="off">
+  <label>Secondary DNS</label>
+  <input name="dns2" value="{{ dns2 }}" placeholder="8.8.8.8" autocomplete="off">
+  <div class="actions">
+    <button type="submit" class="primary">Save DNS</button>
+  </div>
+</form>
+
+<hr>
+
+<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">DHCP Range</h3>
+<form method="POST" action="/advanced">
+  <input type="hidden" name="action" value="dhcp">
+  <div class="row">
+    <div>
+      <label>Range Start</label>
+      <input name="dhcp_start" value="{{ dhcp.start }}" placeholder="192.168.1.100" autocomplete="off">
+    </div>
+    <div>
+      <label>Range End</label>
+      <input name="dhcp_end" value="{{ dhcp.end }}" placeholder="192.168.1.200" autocomplete="off">
+    </div>
+  </div>
+  <label>Lease Time <span>e.g. 12h, 30m, 1d</span></label>
+  <input name="dhcp_lease" value="{{ dhcp.lease }}" placeholder="12h" autocomplete="off">
+  <div class="actions">
+    <button type="submit" class="primary">Save DHCP</button>
+  </div>
+</form>
+
+<hr>
+
+<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Watchdog</h3>
+<form method="POST" action="/advanced">
+  <input type="hidden" name="action" value="watchdog">
+  <label>Healthcheck Target <span>IP to ping over WAN</span></label>
+  <input name="hc_target" value="{{ hc_target }}" placeholder="1.1.1.1" autocomplete="off">
+  <label>Failure Threshold <span>Consecutive failures before restart (1-10)</span></label>
+  <input name="hc_failures" value="{{ hc_failures }}" placeholder="3" autocomplete="off">
+  <div class="actions">
+    <button type="submit" class="primary">Save Watchdog</button>
+  </div>
+</form>
+
+<hr>
+
+<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Logs</h3>
+{% for svc, output in logs.items() %}
+<label>{{ svc }}</label>
+<textarea rows="6" readonly style="font-size:12px;color:var(--sub)">{{ output }}</textarea>
+{% endfor %}
+
+{% endblock %}

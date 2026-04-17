@@ -21,6 +21,17 @@ mkdir -p /etc/dnsmasq.d
 render_template "${P5R_ROOT}/configs/dnsmasq.conf.template" /etc/dnsmasq.d/p5r.conf \
     LAN_IF LAN_GATEWAY LAN_SUBNET_MASK DHCP_RANGE_START DHCP_RANGE_END DHCP_LEASE
 
+# Ensure dnsmasq starts after hostapd has brought up wlan0 (and after the WAN
+# service so upstream DNS resolvers are reachable from the start).
+mkdir -p /etc/systemd/system/dnsmasq.service.d
+cat >/etc/systemd/system/dnsmasq.service.d/10-p5r-ordering.conf <<EOF
+[Unit]
+After=hostapd.service p5r-wan.service
+Wants=hostapd.service
+EOF
+chmod 0644 /etc/systemd/system/dnsmasq.service.d/10-p5r-ordering.conf
+
+systemctl daemon-reload
 systemctl enable --now dnsmasq
 
 # Wait for dnsmasq to become active.

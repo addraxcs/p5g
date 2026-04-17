@@ -13,7 +13,9 @@ import subprocess
 
 from flask import Flask, flash, redirect, render_template, request, Response, url_for
 
-HOSTAPD_CONF = os.environ.get("HOSTAPD_CONF", "/etc/hostapd/hostapd.conf")
+HOSTAPD_CONF  = os.environ.get("HOSTAPD_CONF", "/etc/hostapd/hostapd.conf")
+DNSMASQ_CONF  = os.environ.get("DNSMASQ_CONF", "/etc/dnsmasq.d/p5r.conf")
+P5R_DEFAULTS  = os.environ.get("P5R_DEFAULTS", "/etc/default/p5r")
 PORT         = int(os.environ.get("PORTAL_PORT", "80"))
 BIND         = os.environ.get("PORTAL_BIND", "0.0.0.0")
 SECRET       = os.environ.get("PORTAL_SECRET", os.urandom(24).hex())
@@ -220,6 +222,144 @@ def parse_wg_conf(content):
     return result
 
 
+# ---------------------------------------------------------------------------
+# dnsmasq helpers
+# ---------------------------------------------------------------------------
+
+def read_dnsmasq_conf():
+    """Return dict with dns (list of IPs) and dhcp (dict of range fields)."""
+    result = {"dns": [], "dhcp": {"start": "", "end": "", "mask": "", "lease": ""}}
+    try:
+        with open(DNSMASQ_CONF) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("server="):
+                    result["dns"].append(line[len("server="):])
+                elif line.startswith("dhcp-range="):
+                    parts = line[len("dhcp-range="):].split(",")
+                    if len(parts) >= 4:
+                        result["dhcp"] = {"start": parts[0], "end": parts[1],
+                                          "mask": parts[2], "lease": parts[3]}
+    except FileNotFoundError:
+        pass
+    while len(result["dns"]) < 2:
+        result["dns"].append("")
+    return result
+
+
+def write_dnsmasq_dns(dns1, dns2):
+    try:
+        with open(DNSMASQ_CONF) as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return
+    new_lines = [l for l in lines if not l.strip().startswith("server=")]
+    insert_at = next((i for i, l in enumerate(new_lines) if "no-resolv" in l), len(new_lines))
+    servers = [f"server={ip}\n" for ip in [dns1, dns2] if ip]
+    new_lines[insert_at + 1:insert_at + 1] = servers
+    if not DRY_RUN:
+        with open(DNSMASQ_CONF, "w") as f:
+            f.writelines(new_lines)
+        subprocess.run(["systemctl", "restart", "dnsmasq"], check=False)
+
+
+def write_dnsmasq_dhcp(start, end, lease):
+    cfg = read_dnsmasq_conf()
+    mask = cfg["dhcp"]["mask"] or "255.255.255.0"
+    new_range = f"dhcp-range={start},{end},{mask},{lease}"
+    try:
+        with open(DNSMASQ_CONF) as f:
+            content = f.read()
+    except FileNotFoundError:
+        return
+    content = re.sub(r"^dhcp-range=.*$", new_range, content, flags=re.MULTILINE)
+    if not DRY_RUN:
+        with open(DNSMASQ_CONF, "w") as f:
+            f.write(content)
+        subprocess.run(["systemctl", "restart", "dnsmasq"], check=False)
+    update_env({"DHCP_RANGE_START": start, "DHCP_RANGE_END": end, "DHCP_LEASE": lease})
+
+
+# ---------------------------------------------------------------------------
+# /etc/default/p5r helpers
+# ---------------------------------------------------------------------------
+
+def read_p5r_defaults():
+    result = {"HEALTHCHECK_TARGET": "1.1.1.1", "HEALTHCHECK_FAILURES": "3"}
+    try:
+        with open(P5R_DEFAULTS) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, _, val = line.partition("=")
+                    result[key.strip()] = val.strip()
+    except FileNotFoundError:
+        pass
+    return result
+
+
+def write_p5r_defaults(updates):
+    try:
+        with open(P5R_DEFAULTS) as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        lines = []
+    written = set()
+    new_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.partition("=")[0].strip()
+            if key in updates:
+                new_lines.append(f"{key}={updates[key]}\n")
+                written.add(key)
+                continue
+        new_lines.append(line)
+    for key, val in updates.items():
+        if key not in written:
+            new_lines.append(f"{key}={val}\n")
+    if not DRY_RUN:
+        with open(P5R_DEFAULTS, "w") as f:
+            f.writelines(new_lines)
+        subprocess.run(["systemctl", "restart", "p5r-watchdog.timer"], check=False)
+    update_env(updates)
+
+
+# ---------------------------------------------------------------------------
+# Log helper
+# ---------------------------------------------------------------------------
+
+def get_logs(service, lines=40):
+    if DRY_RUN:
+        return "\n".join([
+            f"Apr 18 08:00:0{i} pi {service}[1]: sample log line {i}"
+            for i in range(1, 6)
+        ])
+    try:
+        r = subprocess.run(
+            ["journalctl", "-u", service, "-n", str(lines), "--no-pager", "--no-hostname"],
+            capture_output=True, text=True, timeout=5,
+        )
+        return r.stdout.strip() or f"No log entries for {service}."
+    except Exception as e:
+        return str(e)
+
+
+# ---------------------------------------------------------------------------
+# Validation helpers
+# ---------------------------------------------------------------------------
+
+def _valid_ip(ip):
+    parts = ip.strip().split(".")
+    if len(parts) != 4:
+        return False
+    return all(p.isdigit() and 0 <= int(p) <= 255 for p in parts)
+
+
+def _valid_lease(s):
+    return bool(re.fullmatch(r"\d+[mhd]", s.strip()))
+
+
 def validate_wg(values):
     errors = []
     for key in ["WG_PRIVATE_KEY", "WG_ADDRESS", "WG_PEER_PUBLIC_KEY", "WG_ENDPOINT", "WG_DNS"]:
@@ -360,6 +500,91 @@ def vpn():
         wg=wg,
         wg_fields=WG_FIELDS,
         mode=mode,
+    )
+
+
+@app.route("/advanced", methods=["GET", "POST"])
+def advanced():
+    if not _check_auth():
+        return _auth_required()
+
+    active = vpn_is_active()
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+
+        if action == "dns":
+            dns1 = request.form.get("dns1", "").strip()
+            dns2 = request.form.get("dns2", "").strip()
+            errors = []
+            if dns1 and not _valid_ip(dns1):
+                errors.append("DNS 1 is not a valid IP address.")
+            if dns2 and not _valid_ip(dns2):
+                errors.append("DNS 2 is not a valid IP address.")
+            if not dns1 and not dns2:
+                errors.append("At least one DNS server is required.")
+            if errors:
+                for e in errors:
+                    flash(e, "err")
+            else:
+                write_dnsmasq_dns(dns1, dns2)
+                flash("[DRY_RUN] DNS updated." if DRY_RUN else "DNS servers updated.", "ok")
+
+        elif action == "dhcp":
+            start = request.form.get("dhcp_start", "").strip()
+            end   = request.form.get("dhcp_end", "").strip()
+            lease = request.form.get("dhcp_lease", "").strip()
+            errors = []
+            if not _valid_ip(start):
+                errors.append("DHCP range start is not a valid IP.")
+            if not _valid_ip(end):
+                errors.append("DHCP range end is not a valid IP.")
+            if start and end and _valid_ip(start) and _valid_ip(end):
+                if int(start.split(".")[-1]) >= int(end.split(".")[-1]):
+                    errors.append("Range start last octet must be lower than end.")
+            if not _valid_lease(lease):
+                errors.append("Lease time must match pattern like 12h, 30m, or 1d.")
+            if errors:
+                for e in errors:
+                    flash(e, "err")
+            else:
+                write_dnsmasq_dhcp(start, end, lease)
+                flash("[DRY_RUN] DHCP range updated." if DRY_RUN else "DHCP range updated.", "ok")
+
+        elif action == "watchdog":
+            target    = request.form.get("hc_target", "").strip()
+            threshold = request.form.get("hc_failures", "").strip()
+            errors = []
+            if not _valid_ip(target):
+                errors.append("Healthcheck target is not a valid IP address.")
+            if not threshold.isdigit() or not (1 <= int(threshold) <= 10):
+                errors.append("Failure threshold must be an integer between 1 and 10.")
+            if errors:
+                for e in errors:
+                    flash(e, "err")
+            else:
+                write_p5r_defaults({"HEALTHCHECK_TARGET": target, "HEALTHCHECK_FAILURES": threshold})
+                flash("[DRY_RUN] Watchdog settings saved." if DRY_RUN else "Watchdog settings saved.", "ok")
+
+        return redirect(url_for("advanced"))
+
+    dns_dhcp = read_dnsmasq_conf()
+    watchdog  = read_p5r_defaults()
+    logs = {
+        svc: get_logs(svc)
+        for svc in ["hostapd", "dnsmasq", f"wg-quick@{VPN_IF}", "p5r-watchdog"]
+    }
+
+    return render_template(
+        "advanced.html",
+        active_tab="advanced",
+        vpn_active=active,
+        dns1=dns_dhcp["dns"][0],
+        dns2=dns_dhcp["dns"][1],
+        dhcp=dns_dhcp["dhcp"],
+        hc_target=watchdog.get("HEALTHCHECK_TARGET", "1.1.1.1"),
+        hc_failures=watchdog.get("HEALTHCHECK_FAILURES", "3"),
+        logs=logs,
     )
 
 

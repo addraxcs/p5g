@@ -37,6 +37,15 @@ rm -f /etc/systemd/system/p5r-watchdog.timer
 rm -f /usr/local/bin/p5r-wan-up
 rm -f /usr/local/bin/p5r-healthcheck
 rm -f /etc/default/p5r
+
+log "removing p5r service drop-ins"
+rm -f /etc/systemd/system/dnsmasq.service.d/10-p5r-ordering.conf
+rmdir /etc/systemd/system/dnsmasq.service.d 2>/dev/null || true
+for wg_if in wg0; do
+    rm -f "/etc/systemd/system/wg-quick@${wg_if}.service.d/10-p5r-ordering.conf"
+    rmdir "/etc/systemd/system/wg-quick@${wg_if}.service.d" 2>/dev/null || true
+done
+
 systemctl daemon-reload
 
 log "removing systemd-networkd unit for WAN"
