@@ -2,8 +2,8 @@
 # Requires the caller to have `set -euo pipefail` already.
 
 # Where the env lives on the pi. The repo root is typically ~/private-5g-router.
-FARM_ROOT="${FARM_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-FARM_ENV="${FARM_ENV:-${FARM_ROOT}/.env}"
+P5R_ROOT="${P5R_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+P5R_ENV="${P5R_ENV:-${P5R_ROOT}/.env}"
 
 log()  { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
@@ -13,11 +13,11 @@ require_root() {
 }
 
 load_env() {
-    [[ -f "${FARM_ENV}" ]] || die "missing ${FARM_ENV}. Copy .env.example and fill values."
+    [[ -f "${P5R_ENV}" ]] || die "missing ${P5R_ENV}. Copy .env.example and fill values."
     # Only pull KEY=VALUE lines.
     set -a
     # shellcheck disable=SC1090
-    source "${FARM_ENV}"
+    source "${P5R_ENV}"
     set +a
 }
 

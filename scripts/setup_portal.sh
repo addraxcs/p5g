@@ -19,7 +19,7 @@ fi
 PORTAL_BIN=/usr/local/bin/p5r-portal
 
 log "installing portal script to ${PORTAL_BIN}"
-install -m 0755 "${SCRIPT_DIR}/portal.py" "${PORTAL_BIN}"
+install -m 0755 "${P5R_ROOT}/portal/app.py" "${PORTAL_BIN}"
 
 log "writing p5r-portal.service"
 cat >/etc/systemd/system/p5r-portal.service <<EOF
@@ -34,6 +34,8 @@ Environment=PORTAL_BIND=${LAN_GATEWAY}
 Environment=PORTAL_PORT=80
 Environment=PORTAL_USER=${PORTAL_USER}
 Environment=PORTAL_PASS=${PORTAL_PASS}
+Environment=P5R_ROOT=${P5R_ROOT}
+Environment=P5R_ENV=${P5R_ENV}
 ExecStart=/usr/bin/python3 ${PORTAL_BIN}
 Restart=on-failure
 RestartSec=5

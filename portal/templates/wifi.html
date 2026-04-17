@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>WiFi Settings</h2>
+<p class="sub">Changes apply immediately. Reconnect after saving.</p>
+<form method="POST" action="/">
+  <label>Network Name (SSID)</label>
+  <input name="ssid" value="{{ ssid }}" maxlength="32" autocomplete="off" spellcheck="false" required>
+
+  <label>Passphrase <span>8-63 characters — leave blank to keep current</span></label>
+  <input name="passphrase" value="{{ passphrase }}" maxlength="63" autocomplete="off" spellcheck="false">
+
+  <div class="row">
+    <div>
+      <label>Channel</label>
+      <select name="channel">
+        {% for ch in channels %}
+        <option value="{{ ch }}" {% if ch == channel %}selected{% endif %}>{{ ch }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Country</label>
+      <select name="country">
+        {% for code, name in countries %}
+        <option value="{{ code }}" {% if code == country %}selected{% endif %}>{{ code }} - {{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="submit" class="primary">Save and Apply</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Router Setup</title>
+<style>
+:root{
+  --bg:#0f1117;
+  --surface:#1a1d27;
+  --surface2:#22263a;
+  --border:#2e3348;
+  --text:#e8eaf0;
+  --sub:#8b90a8;
+  --accent:#6c8dfa;
+  --accent-dim:#2a3560;
+  --ok-bg:#0d2e1a;--ok:#4ade80;
+  --err-bg:#2d0e0e;--err:#f87171;
+  --up-bg:#0d2e1a;--up:#4ade80;
+  --down-bg:#2d0e0e;--down:#f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);max-width:480px;margin:48px auto;padding:0 24px;font-size:15px}
+nav{display:flex;gap:2px;margin-bottom:32px;border-bottom:1px solid var(--border)}
+nav a{padding:9px 18px;text-decoration:none;font-size:13px;font-weight:600;color:var(--sub);border-radius:8px 8px 0 0;margin-bottom:-1px;border:1px solid transparent;transition:color .15s}
+nav a.active{color:var(--text);border-color:var(--border) var(--border) var(--bg) var(--border);background:var(--bg)}
+nav a:hover:not(.active){color:var(--text)}
+h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
+p.sub{color:var(--sub);font-size:13px;margin-bottom:24px}
+label{display:block;font-size:12px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:18px}
+label span{text-transform:none;font-weight:400;letter-spacing:0;margin-left:6px;color:var(--sub);opacity:.7}
+input,select,textarea{width:100%;padding:10px 12px;font-size:14px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:var(--surface)}
+textarea{font-family:monospace;font-size:13px;resize:vertical;line-height:1.5}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:28px}
+button{width:100%;padding:11px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:opacity .15s}
+button:active{opacity:.8}
+button.primary{background:var(--accent);color:#fff}
+button.danger{background:transparent;color:var(--err);border:1px solid #4a1f1f}
+button.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.ok{color:var(--ok);background:var(--ok-bg);padding:11px 14px;border-radius:8px;margin-bottom:16px;font-size:13px;border:1px solid #1a4d2e}
+.err{color:var(--err);background:var(--err-bg);padding:11px 14px;border-radius:8px;margin-bottom:16px;font-size:13px;border:1px solid #4a1f1f}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;letter-spacing:.3px}
+.badge.up{background:var(--up-bg);color:var(--up)}
+.badge.down{background:var(--down-bg);color:var(--down)}
+.status-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:24px;font-size:13px}
+.status-box .row2{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.status-box .row2:last-child{margin-bottom:0}
+.status-box .dim{color:var(--sub)}
+hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+.mode-tabs{display:flex;gap:8px;margin-bottom:22px}
+.mode-tabs a{padding:6px 16px;font-size:13px;font-weight:600;text-decoration:none;border:1px solid var(--border);border-radius:6px;color:var(--sub);transition:all .15s}
+.mode-tabs a.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent-dim)}
+.mode-tabs a:hover:not(.active){color:var(--text);border-color:var(--sub)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="{{ 'active' if active_tab == 'wifi' else '' }}">WiFi</a>
+  <a href="/vpn" class="{{ 'active' if active_tab == 'vpn' else '' }}">VPN <span class="badge {{ 'up' if vpn_active else 'down' }}">{{ 'ON' if vpn_active else 'OFF' }}</span></a>
+</nav>
+{% for msg in get_flashed_messages(category_filter=["ok"]) %}
+<p class="ok">{{ msg }}</p>
+{% endfor %}
+{% for msg in get_flashed_messages(category_filter=["err"]) %}
+<p class="err">{{ msg }}</p>
+{% endfor %}
+{% block content %}{% endblock %}
+</body>
+</html>

@@ -20,7 +20,7 @@ require_var LAN_IF
 
 # 1. sysctl
 log "installing sysctl forwarding config"
-install -m 0644 "${FARM_ROOT}/configs/sysctl-forward.conf" /etc/sysctl.d/99-p5r-forward.conf
+install -m 0644 "${P5R_ROOT}/configs/sysctl-forward.conf" /etc/sysctl.d/99-p5r-forward.conf
 sysctl --system >/dev/null
 
 fwd="$(sysctl -n net.ipv4.ip_forward || echo 0)"
@@ -29,7 +29,7 @@ log "forwarding enabled"
 
 # 2. nftables
 log "rendering nftables ruleset for WAN=${WAN_IF} LAN=${LAN_IF}"
-render_template "${FARM_ROOT}/configs/nftables.conf.template" /etc/nftables.conf WAN_IF LAN_IF
+render_template "${P5R_ROOT}/configs/nftables.conf.template" /etc/nftables.conf WAN_IF LAN_IF
 
 # Optional management interface rule.
 if [[ -n "${MGMT_IF:-}" && "${MGMT_IF}" != "${LAN_IF}" && "${MGMT_IF}" != "${WAN_IF}" ]]; then

@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>VPN Settings</h2>
+<p class="sub">WireGuard router-level tunnel. All LAN traffic is routed through the VPN.</p>
+
+<div class="status-box">
+  <div class="row2">
+    <span><strong>Tunnel</strong></span>
+    <span class="badge {{ 'up' if vpn_active else 'down' }}">{{ 'ACTIVE' if vpn_active else 'INACTIVE' }}</span>
+  </div>
+  {% if handshake %}
+  <div class="row2">
+    <span class="dim">Last handshake</span>
+    <span>{{ handshake }}</span>
+  </div>
+  {% endif %}
+  {% if endpoint_live %}
+  <div class="row2">
+    <span class="dim">Endpoint</span>
+    <span>{{ endpoint_live }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mode-tabs">
+  <a href="/vpn?mode=import" class="{{ 'active' if mode == 'import' else '' }}">Import .conf</a>
+  <a href="/vpn?mode=manual" class="{{ 'active' if mode == 'manual' else '' }}">Manual</a>
+</div>
+
+{% if mode == 'import' %}
+<form method="POST" action="/vpn?mode=import">
+  <label>Paste your WireGuard .conf file</label>
+  <textarea name="conf_content" rows="14" autocomplete="off" spellcheck="false"
+    placeholder="[Interface]&#10;PrivateKey = ...&#10;Address = ...&#10;DNS = ...&#10;&#10;[Peer]&#10;PublicKey = ...&#10;Endpoint = ...&#10;AllowedIPs = 0.0.0.0/0&#10;PersistentKeepalive = 25"></textarea>
+  <div class="actions">
+    <button type="submit" name="action" value="import" class="primary">Import and Save</button>
+  </div>
+</form>
+
+{% else %}
+<form method="POST" action="/vpn?mode=manual">
+  {% for key, label, itype, hint in wg_fields %}
+  <label>{{ label }} <span>{{ hint }}</span></label>
+  <input type="{{ itype }}" name="{{ key }}" value="{{ wg.get(key, '') }}"
+    autocomplete="off" spellcheck="false" placeholder="PENDING">
+  {% endfor %}
+
+  <hr>
+  <div class="actions">
+    <button type="submit" name="action" value="save" class="secondary">Save Configuration</button>
+    {% if not vpn_active %}
+    <button type="submit" name="action" value="enable" class="primary">Enable VPN (apply kill switch)</button>
+    {% else %}
+    <button type="submit" name="action" value="restart" class="primary">Save and Restart Tunnel</button>
+    <button type="submit" name="action" value="disable" class="danger">Disable VPN (restore normal routing)</button>
+    {% endif %}
+  </div>
+</form>
+{% endif %}
+{% endblock %}

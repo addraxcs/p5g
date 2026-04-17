@@ -1,0 +1,22 @@
+# wg0.conf — WireGuard client config for private-5g-router
+# Rendered by scripts/setup_vpn.sh from .env
+#
+# Placeholders substituted at install time:
+#   __WG_PRIVATE_KEY__          interface private key (keep secret)
+#   __WG_ADDRESS__              tunnel IP assigned by your VPN provider (e.g. 10.8.0.2/32)
+#   __WG_DNS__                  upstream DNS to use via the tunnel (e.g. 1.1.1.1)
+#   __WG_PEER_PUBLIC_KEY__      VPN server public key
+#   __WG_ENDPOINT__             VPN server address:port (e.g. vpn.example.com:51820)
+#   __WG_ALLOWED_IPS__          routes to send through the tunnel (0.0.0.0/0 = all traffic)
+#   __WG_PERSISTENT_KEEPALIVE__ keepalive interval in seconds (25 is standard)
+
+[Interface]
+PrivateKey = __WG_PRIVATE_KEY__
+Address = __WG_ADDRESS__
+DNS = __WG_DNS__
+
+[Peer]
+PublicKey = __WG_PEER_PUBLIC_KEY__
+Endpoint = __WG_ENDPOINT__
+AllowedIPs = __WG_ALLOWED_IPS__
+PersistentKeepalive = __WG_PERSISTENT_KEEPALIVE__

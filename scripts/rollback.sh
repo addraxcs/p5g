@@ -13,6 +13,18 @@ source "${HERE}/_lib.sh"
 
 require_root
 
+# VPN teardown (safe no-op if VPN was never installed)
+log "stopping VPN tunnel if active"
+for wg_unit in $(systemctl list-units --type=service --all --no-legend 'wg-quick@*' 2>/dev/null \
+    | awk '{print $1}'); do
+    systemctl disable --now "${wg_unit}" 2>/dev/null || true
+done
+if [[ -d /etc/wireguard ]]; then
+    log "removing WireGuard configs"
+    rm -f /etc/wireguard/wg0.conf
+    rmdir /etc/wireguard 2>/dev/null || true
+fi
+
 log "stopping and disabling services"
 for unit in p5r-watchdog.timer p5r-watchdog.service p5r-wan.service; do
     systemctl disable --now "${unit}" 2>/dev/null || true

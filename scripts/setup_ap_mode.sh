@@ -153,7 +153,7 @@ systemctl restart systemd-networkd
 
 # Render hostapd.conf.
 mkdir -p /etc/hostapd
-render_template "${FARM_ROOT}/configs/hostapd.conf.template" /etc/hostapd/hostapd.conf \
+render_template "${P5R_ROOT}/configs/hostapd.conf.template" /etc/hostapd/hostapd.conf \
     LAN_IF WIFI_SSID WIFI_PASSPHRASE WIFI_COUNTRY WIFI_CHANNEL
 # Passphrase lives in this file, tighten perms.
 chmod 0600 /etc/hostapd/hostapd.conf

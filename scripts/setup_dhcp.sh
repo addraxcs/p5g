@@ -18,7 +18,7 @@ command -v dnsmasq >/dev/null || die "dnsmasq not installed. Run setup_prereqs.s
 
 mkdir -p /etc/dnsmasq.d
 
-render_template "${FARM_ROOT}/configs/dnsmasq.conf.template" /etc/dnsmasq.d/p5r.conf \
+render_template "${P5R_ROOT}/configs/dnsmasq.conf.template" /etc/dnsmasq.d/p5r.conf \
     LAN_IF LAN_GATEWAY LAN_SUBNET_MASK DHCP_RANGE_START DHCP_RANGE_END DHCP_LEASE
 
 systemctl enable --now dnsmasq

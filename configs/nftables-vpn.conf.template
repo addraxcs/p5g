@@ -1,0 +1,73 @@
+#!/usr/sbin/nft -f
+#
+# private-5g-router nftables ruleset — VPN MODE
+# Installed to: /etc/nftables.conf by scripts/setup_vpn.sh
+#
+# Placeholders (replaced by setup_vpn.sh from .env):
+#   __WAN_IF__    physical uplink (e.g. usb0, eth1, ppp0)
+#   __LAN_IF__    downstream interface (e.g. wlan0)
+#   __VPN_IF__    WireGuard tunnel interface (e.g. wg0)
+#   __MGMT_RULE__ SSH allow for MGMT_IF, or a no-op comment
+#
+# Kill switch posture:
+#   - LAN traffic is forwarded through __VPN_IF__ ONLY.
+#   - Forwarding to __WAN_IF__ is never permitted.
+#   - If __VPN_IF__ is down, forward policy drops everything.
+#   - There is no silent fallback to WAN.
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        iif "lo" accept
+        ct state established,related accept
+        ct state invalid drop
+
+        ip protocol icmp limit rate 20/second accept
+        ip6 nexthdr icmpv6 limit rate 20/second accept
+
+        # LAN: allow SSH, DHCP, DNS from clients
+        iifname "__LAN_IF__" tcp dport 22 accept
+        iifname "__LAN_IF__" udp dport { 53, 67 } accept
+        iifname "__LAN_IF__" tcp dport 53 accept
+
+        # Management interface: optional out-of-band SSH
+        __MGMT_RULE__
+
+        # WAN inbound: drop. No services exposed.
+        iifname "__WAN_IF__" drop
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+
+        # KILL SWITCH: LAN traffic exits through the VPN tunnel only.
+        # Forwarding to __WAN_IF__ is intentionally absent.
+        # If __VPN_IF__ is down, the interface does not exist and
+        # this rule does not match — policy drop catches everything.
+        iifname "__LAN_IF__" oifname "__VPN_IF__" accept
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}
+
+table ip nat {
+    chain prerouting {
+        type nat hook prerouting priority -100;
+    }
+
+    chain postrouting {
+        type nat hook postrouting priority 100;
+
+        # Masquerade on the tunnel, not the physical WAN.
+        # WireGuard handles its own UDP encapsulation to __WAN_IF__.
+        oifname "__VPN_IF__" masquerade
+    }
+}
