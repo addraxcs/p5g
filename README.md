@@ -191,11 +191,7 @@ Protected by HTTP Basic Auth (`PORTAL_USER` / `PORTAL_PASS` in `.env`). Only rea
 
 **VPN tab** — Enable, disable, or reconfigure WireGuard. Paste a `.conf` file directly (Import mode) or fill in individual fields (Manual mode). Shows tunnel status and last handshake when active.
 
-![VPN portal](docs/screenshots/vpn.png)
-
 **Advanced tab** — Four sections:
-
-![Advanced portal](docs/screenshots/advanced.png)
 
 | Section | What you can change |
 |---|---|
@@ -232,6 +228,8 @@ PersistentKeepalive = 25
 
 **Via the portal (easiest):** open the VPN tab, switch to Import mode, paste your `.conf` file, and click Import. The portal parses it and saves the values to `.env`. Review the fields then click Enable.
 
+![VPN portal](docs/screenshots/vpn.png)
+
 **Via `.env` manually:** extract the values into `.env` directly:
 
 | `.conf` field | `.env` variable |
@@ -251,6 +249,8 @@ Set `WG_ALLOWED_IPS=0.0.0.0/0` to route all LAN traffic through the VPN. Once `.
 ---
 
 ## Advanced usage
+
+![Advanced portal](docs/screenshots/advanced.png)
 
 | Task | Command |
 |---|---|
