@@ -4,6 +4,29 @@ Turn a Raspberry Pi and a Huawei USB dongle into a private, self-contained 4G/5G
 
 ---
 
+## Contents
+
+- [What you get](#what-you-get)
+- [Quick start](#quick-start)
+- [What the installer does](#what-the-installer-does)
+- [Who this is for](#who-this-is-for)
+- [Security model](#security-model)
+- [Architecture](#architecture)
+- [Repo structure](#repo-structure)
+- [Configuration](#configuration)
+- [Config portal](#config-portal)
+- [WireGuard configuration](#wireguard-configuration)
+- [Advanced usage](#advanced-usage)
+- [Known limitations](#known-limitations)
+- [Why this exists](#why-this-exists)
+- [Hardware reference](#hardware-reference)
+- [Design direction](#design-direction)
+- [Related work](#related-work-in-progress)
+- [VPN and SIM usage](#vpn-and-sim-usage)
+- [License](#license)
+
+---
+
 ## What you get
 
 - A WiFi access point backed by a 4G/5G SIM
