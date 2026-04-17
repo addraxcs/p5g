@@ -116,7 +116,7 @@ sudo ./scripts/setup_portal.sh
 
 This installs `python3-flask`, copies the portal to `/usr/local/bin/p5r-portal`, and starts `p5r-portal.service` bound to the LAN gateway IP on port 80.
 
-The portal has no authentication. It is only reachable from within the LAN. Do not expose port 80 on the WAN interface.
+The portal is protected by HTTP Basic Auth. Credentials are set via `PORTAL_USER` and `PORTAL_PASS` in `.env` (defaults: `admin` / `p5g123` -- change before deploying). It is only reachable from within the LAN. Do not expose port 80 on the WAN interface.
 
 ---
 

@@ -8,6 +8,8 @@ source "${SCRIPT_DIR}/_lib.sh"
 require_root
 load_env
 require_var LAN_GATEWAY
+require_var PORTAL_USER
+require_var PORTAL_PASS
 
 log "installing flask"
 if ! python3 -c "import flask" 2>/dev/null; then
@@ -30,6 +32,8 @@ Wants=hostapd.service
 Type=simple
 Environment=PORTAL_BIND=${LAN_GATEWAY}
 Environment=PORTAL_PORT=80
+Environment=PORTAL_USER=${PORTAL_USER}
+Environment=PORTAL_PASS=${PORTAL_PASS}
 ExecStart=/usr/bin/python3 ${PORTAL_BIN}
 Restart=on-failure
 RestartSec=5

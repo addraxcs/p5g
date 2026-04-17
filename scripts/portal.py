@@ -7,14 +7,18 @@ Runs as root so it can write hostapd.conf and restart hostapd.
 
 import os
 import re
+import secrets
 import subprocess
 
-from flask import Flask, flash, redirect, render_template_string, request, url_for
+from flask import Flask, flash, render_template_string, request, Response
 
 HOSTAPD_CONF = os.environ.get("HOSTAPD_CONF", "/etc/hostapd/hostapd.conf")
 PORT = int(os.environ.get("PORTAL_PORT", "80"))
 BIND = os.environ.get("PORTAL_BIND", "0.0.0.0")
 SECRET = os.environ.get("PORTAL_SECRET", os.urandom(24).hex())
+DRY_RUN = os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
+PORTAL_USER = os.environ.get("PORTAL_USER", "admin")
+PORTAL_PASS = os.environ.get("PORTAL_PASS", "p5g123")
 
 CHANNELS_24GHZ = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 
@@ -92,6 +96,24 @@ app = Flask(__name__)
 app.secret_key = SECRET
 
 
+def _check_auth():
+    auth = request.authorization
+    if not auth:
+        return False
+    return (
+        secrets.compare_digest(auth.username, PORTAL_USER)
+        and secrets.compare_digest(auth.password, PORTAL_PASS)
+    )
+
+
+def _auth_required():
+    return Response(
+        "Authentication required.",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Router Setup"'},
+    )
+
+
 def read_hostapd():
     fields = {"ssid": "", "wpa_passphrase": "", "channel": "6", "country_code": "GB"}
     try:
@@ -115,11 +137,14 @@ def write_hostapd(ssid, passphrase, channel, country):
     content = re.sub(r"^country_code=.*$", f"country_code={country}", content, flags=re.MULTILINE)
     with open(HOSTAPD_CONF, "w") as f:
         f.write(content)
-    subprocess.run(["systemctl", "restart", "hostapd"], check=True)
+    if not DRY_RUN:
+        subprocess.run(["systemctl", "restart", "hostapd"], check=True)
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    if not _check_auth():
+        return _auth_required()
     cfg = read_hostapd()
     if request.method == "POST":
         ssid = request.form.get("ssid", "").strip()

@@ -91,10 +91,13 @@ sudo ./scripts/setup_portal.sh
 
 This installs `python3-flask` and starts `p5r-portal.service`. Once running,
 connect a device to the WiFi and open `http://10.77.0.1/` (or whatever
-`LAN_GATEWAY` is set to). Changes take effect immediately and restart hostapd.
+`LAN_GATEWAY` is set to). The browser will prompt for credentials set via
+`PORTAL_USER` and `PORTAL_PASS` in `.env`.
 
-The portal is reachable from the LAN only. It has no authentication - treat
-access to the WiFi as equivalent to access to the portal.
+Default credentials are `admin` / `p5g123`. Change them before deploying --
+`install.sh` prompts for this, or edit `.env` and re-run `setup_portal.sh`.
+
+The portal is reachable from the LAN only.
 
 ---
 

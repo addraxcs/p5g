@@ -107,8 +107,18 @@ if [[ "${_configure}" == true ]]; then
         _prompt_silent WIFI_PASSPHRASE "WiFi passphrase" "${_GEN_PIN}"
     done
 
-    _prompt WIFI_COUNTRY "WiFi country code (ISO 3166-1)" "GB"
-    _prompt WAN_IF       "WAN interface"                  "${DETECTED_WAN_IF}"
+    _prompt WIFI_COUNTRY  "WiFi country code (ISO 3166-1)" "GB"
+    _prompt WAN_IF        "WAN interface"                  "${DETECTED_WAN_IF}"
+
+    printf '\n--- Config portal credentials ---\n'
+    printf '  The portal at http://<gateway>/ is protected by HTTP Basic Auth.\n'
+    printf '  Default: admin / p5g123  -- change these.\n\n'
+    _prompt        PORTAL_USER "Portal username" "admin"
+    _prompt_silent PORTAL_PASS "Portal password" "p5g123"
+    while [[ ${#PORTAL_PASS} -lt 6 ]]; do
+        printf 'Password must be at least 6 characters.\n'
+        _prompt_silent PORTAL_PASS "Portal password" "p5g123"
+    done
 
     APN="" PPP_DEV="" PPP_USER="" PPP_PASS=""
     if [[ "${MODE}" == "ppp" ]]; then
@@ -151,6 +161,10 @@ DHCP_LEASE=12h
 HEALTHCHECK_TARGET=1.1.1.1
 HEALTHCHECK_FAILURES=3
 HEALTHCHECK_INTERVAL=60
+
+# --- Config portal ---
+PORTAL_USER=${PORTAL_USER}
+PORTAL_PASS=${PORTAL_PASS}
 EOF
 
     if [[ "${MODE}" == "ppp" ]]; then
@@ -209,6 +223,7 @@ printf '  SSID        : %s\n' "${WIFI_SSID}"
 printf '  Passphrase  : see .env (chmod 0600)\n'
 printf '  Gateway IP  : %s\n' "${_GW}"
 printf '  Healthcheck : %s\n' "${_HC}"
+printf '  Portal      : http://%s/  (user: %s)\n' "${_GW}" "${PORTAL_USER:-admin}"
 printf '\n'
 printf '  Connect to "%s" and browse.\n' "${WIFI_SSID}"
 printf '  Diagnostics : sudo %s/scripts/healthcheck_modem.sh\n' "${SCRIPT_DIR}"

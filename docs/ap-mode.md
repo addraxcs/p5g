@@ -99,7 +99,10 @@ sudo ./scripts/setup_portal.sh
 ```
 
 Once the `p5r-portal.service` is running, open `http://10.77.0.1/` from any
-device on the WiFi. The portal exposes:
+device on the WiFi. The browser will prompt for a username and password
+(set via `PORTAL_USER` / `PORTAL_PASS` in `.env`; defaults: `admin` / `p5g123`).
+
+The portal exposes:
 
 | Field | Validation |
 |---|---|
