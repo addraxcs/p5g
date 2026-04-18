@@ -1,4 +1,4 @@
-# private-5g-router WAN bring-up.
+# p5g WAN bring-up.
 # Installed to: /etc/systemd/system/p5r-wan.service
 #
 # Placeholders (replaced by scripts/install_services.sh from .env):
@@ -11,7 +11,7 @@
 # For mode=ppp, this unit runs pppd as a long-lived process with restart.
 
 [Unit]
-Description=private-5g-router WAN (__MODE__ mode on __WAN_IF__)
+Description=p5g WAN (__MODE__ mode on __WAN_IF__)
 After=network-pre.target systemd-udev-settle.service
 Wants=network-pre.target
 # PENDING: if modem-detect service is in use, add:

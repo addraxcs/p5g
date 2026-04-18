@@ -1,4 +1,4 @@
-# private-5g-router hostapd config.
+# p5g hostapd config.
 # Installed to: /etc/hostapd/hostapd.conf
 #
 # Placeholders (replaced by scripts/setup_ap_mode.sh from .env):

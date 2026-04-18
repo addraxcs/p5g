@@ -95,7 +95,7 @@ if systemctl is-active --quiet NetworkManager 2>/dev/null; then
     log "telling NetworkManager to unmanage ${LAN_IF}"
     mkdir -p /etc/NetworkManager/conf.d
     cat >/etc/NetworkManager/conf.d/99-p5r-unmanage-lan.conf <<EOF
-# private-5g-router: hostapd owns ${LAN_IF}. NM must not touch it.
+# p5g: hostapd owns ${LAN_IF}. NM must not touch it.
 [keyfile]
 unmanaged-devices=interface-name:${LAN_IF}
 EOF
@@ -134,7 +134,7 @@ fi
 NET_FILE="/etc/systemd/network/20-lan-${LAN_IF}.network"
 log "writing ${NET_FILE} (${LAN_GATEWAY}/${prefix})"
 cat >"${NET_FILE}" <<EOF
-# private-5g-router: LAN (wireless AP).
+# p5g: LAN (wireless AP).
 [Match]
 Name=${LAN_IF}
 

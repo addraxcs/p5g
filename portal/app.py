@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Config portal for private-5g-router.
+Config portal for p5g.
 Flask app served on LAN_GATEWAY:80.
 Manages WiFi (hostapd) and optional WireGuard VPN settings.
 Runs as root.
@@ -22,7 +22,7 @@ SECRET       = os.environ.get("PORTAL_SECRET", os.urandom(24).hex())
 DRY_RUN      = os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes")
 PORTAL_USER  = os.environ.get("PORTAL_USER", "admin")
 PORTAL_PASS  = os.environ.get("PORTAL_PASS", "p5g123")
-P5R_ROOT     = os.environ.get("P5R_ROOT", "/root/private-5g-router")
+P5R_ROOT     = os.environ.get("P5R_ROOT", "/root/p5g")
 P5R_ENV      = os.environ.get("P5R_ENV", os.path.join(P5R_ROOT, ".env"))
 VPN_IF       = os.environ.get("VPN_IF", "wg0")
 SETUP_VPN    = os.path.join(P5R_ROOT, "scripts/setup_vpn.sh")

@@ -1,6 +1,6 @@
 #!/usr/sbin/nft -f
 #
-# private-5g-router nftables ruleset — VPN MODE
+# p5g nftables ruleset — VPN MODE
 # Installed to: /etc/nftables.conf by scripts/setup_vpn.sh
 #
 # Placeholders (replaced by setup_vpn.sh from .env):

@@ -41,13 +41,13 @@ Raspberry Pi Imager walkthrough. Once SSH works, come back here.
 From your Mac or Linux machine:
 
 ```sh
-rsync -avz --exclude .git --exclude .env ./ <user>@<pi-ip>:~/private-5g-router/
+rsync -avz --exclude .git --exclude .env ./ <user>@<pi-ip>:~/p5g/
 ```
 
 On the Pi:
 
 ```sh
-cd ~/private-5g-router
+cd ~/p5g
 chmod +x scripts/*.sh
 ```
 

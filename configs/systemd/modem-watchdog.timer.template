@@ -1,10 +1,10 @@
-# private-5g-router watchdog timer.
+# p5g watchdog timer.
 # Installed to: /etc/systemd/system/p5r-watchdog.timer
 #
 # Fires the watchdog service every HEALTHCHECK_INTERVAL seconds.
 
 [Unit]
-Description=private-5g-router watchdog timer
+Description=p5g watchdog timer
 
 [Timer]
 OnBootSec=2min

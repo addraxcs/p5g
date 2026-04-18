@@ -1,7 +1,7 @@
 # Shared helpers. Source, do not execute.
 # Requires the caller to have `set -euo pipefail` already.
 
-# Where the env lives on the pi. The repo root is typically ~/private-5g-router.
+# Where the env lives on the pi. The repo root is typically ~/p5g.
 P5R_ROOT="${P5R_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 P5R_ENV="${P5R_ENV:-${P5R_ROOT}/.env}"
 

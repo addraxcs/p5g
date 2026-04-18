@@ -1,4 +1,4 @@
-# private-5g-router dnsmasq config.
+# p5g dnsmasq config.
 # Installed to: /etc/dnsmasq.d/p5r.conf
 #
 # Placeholders (replaced from .env):

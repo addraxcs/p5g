@@ -30,7 +30,7 @@ if systemctl is-active --quiet NetworkManager 2>/dev/null; then
     log "telling NetworkManager to unmanage ${WAN_IF}"
     mkdir -p /etc/NetworkManager/conf.d
     cat >/etc/NetworkManager/conf.d/99-p5r-unmanage-wan.conf <<EOF
-# private-5g-router: systemd-networkd owns ${WAN_IF}.
+# p5g: systemd-networkd owns ${WAN_IF}.
 [keyfile]
 unmanaged-devices=interface-name:${WAN_IF}
 EOF
@@ -54,7 +54,7 @@ fi
 UNIT_PATH="/etc/systemd/network/10-wan-${WAN_IF}.network"
 log "writing ${UNIT_PATH}"
 cat >"${UNIT_PATH}" <<EOF
-# private-5g-router: WAN uplink via ${WAN_IF} (Huawei E3372 HiLink mode).
+# p5g: WAN uplink via ${WAN_IF} (Huawei E3372 HiLink mode).
 # RouteMetric=50 ensures the modem default wins over any management
 # interface (e.g. eth0 plugged into unifi) whose default is at metric 100.
 [Match]

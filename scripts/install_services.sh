@@ -35,7 +35,7 @@ log "installing services for mode=${MODE}, WAN_IF=${WAN_IF}"
 
 # ---- /etc/default/p5r: env file for watchdog ----
 cat >/etc/default/p5r <<EOF
-# private-5g-router watchdog defaults. Edit and restart p5r-watchdog.timer to apply.
+# p5g watchdog defaults. Edit and restart p5r-watchdog.timer to apply.
 HEALTHCHECK_TARGET=${HEALTHCHECK_TARGET:-1.1.1.1}
 HEALTHCHECK_FAILURES=${HEALTHCHECK_FAILURES:-3}
 WAN_IF=${WAN_IF}
@@ -91,7 +91,7 @@ WAN_UNIT=/etc/systemd/system/p5r-wan.service
 if [[ "${MODE}" == "network" ]]; then
     cat >"${WAN_UNIT}" <<EOF
 [Unit]
-Description=private-5g-router WAN (network mode on ${WAN_IF})
+Description=p5g WAN (network mode on ${WAN_IF})
 After=network-pre.target systemd-networkd.service
 Wants=systemd-networkd.service
 
@@ -108,7 +108,7 @@ else
     # ppp mode
     cat >"${WAN_UNIT}" <<EOF
 [Unit]
-Description=private-5g-router WAN (ppp mode)
+Description=p5g WAN (ppp mode)
 After=network-pre.target
 Wants=network-pre.target
 
@@ -127,7 +127,7 @@ chmod 0644 "${WAN_UNIT}"
 # ---- p5r-watchdog service + timer ----
 cat >/etc/systemd/system/p5r-watchdog.service <<'EOF'
 [Unit]
-Description=private-5g-router watchdog
+Description=p5g watchdog
 After=p5r-wan.service
 Wants=p5r-wan.service
 
@@ -140,7 +140,7 @@ EOF
 
 cat >/etc/systemd/system/p5r-watchdog.timer <<'EOF'
 [Unit]
-Description=private-5g-router watchdog timer
+Description=p5g watchdog timer
 
 [Timer]
 OnBootSec=2min

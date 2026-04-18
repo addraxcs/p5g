@@ -24,7 +24,7 @@ install -m 0755 "${P5R_ROOT}/portal/app.py" "${PORTAL_BIN}"
 log "writing p5r-portal.service"
 cat >/etc/systemd/system/p5r-portal.service <<EOF
 [Unit]
-Description=private-5g-router config portal
+Description=p5g config portal
 After=network.target hostapd.service
 Wants=hostapd.service
 

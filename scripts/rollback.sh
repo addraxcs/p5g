@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # rollback.sh
-# Reverse everything private-5g-router installed on the pi.
+# Reverse everything p5g installed on the pi.
 # Does NOT uninstall packages. Does NOT touch SSH. Safe to run multiple times.
 
 set -euo pipefail

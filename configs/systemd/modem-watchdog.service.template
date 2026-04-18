@@ -1,4 +1,4 @@
-# private-5g-router watchdog service.
+# p5g watchdog service.
 # Installed to: /etc/systemd/system/p5r-watchdog.service
 #
 # Paired with p5r-watchdog.timer below (same directory when rendered).
@@ -7,7 +7,7 @@
 # if too many consecutive failures accumulate it restarts p5r-wan.service.
 
 [Unit]
-Description=private-5g-router watchdog
+Description=p5g watchdog
 After=p5r-wan.service
 Wants=p5r-wan.service
 

@@ -144,10 +144,10 @@ re-run over SSH:
 
 ```sh
 # macOS or Linux
-rsync -avz --exclude .git --exclude .env ./ <user>@<pi-ip>:~/private-5g-router/
+rsync -avz --exclude .git --exclude .env ./ <user>@<pi-ip>:~/p5g/
 
 # then on the pi
-cd ~/private-5g-router
+cd ~/p5g
 sudo ./scripts/setup_ap_mode.sh
 ```
 

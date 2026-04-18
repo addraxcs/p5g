@@ -1,4 +1,4 @@
-# wg0.conf — WireGuard client config for private-5g-router
+# wg0.conf — WireGuard client config for p5g
 # Rendered by scripts/setup_vpn.sh from .env
 #
 # Placeholders substituted at install time:

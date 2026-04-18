@@ -33,7 +33,7 @@ mkdir -p /etc/chatscripts
 
 log "writing ${CHAT}"
 cat >"${CHAT}" <<EOF
-# private-5g-router chat script. Pair: ${PEER}
+# p5g chat script. Pair: ${PEER}
 ABORT           'BUSY'
 ABORT           'NO CARRIER'
 ABORT           'ERROR'
@@ -51,7 +51,7 @@ chmod 0644 "${CHAT}"
 
 log "writing ${PEER}"
 cat >"${PEER}" <<EOF
-# private-5g-router PPP peer for Huawei E3372 on ${PPP_DEV}
+# p5g PPP peer for Huawei E3372 on ${PPP_DEV}
 ${PPP_DEV}
 115200
 defaultroute

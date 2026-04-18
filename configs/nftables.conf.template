@@ -1,6 +1,6 @@
 #!/usr/sbin/nft -f
 #
-# private-5g-router nftables ruleset.
+# p5g nftables ruleset.
 # Installed to: /etc/nftables.conf
 #
 # Placeholders (replaced by scripts/setup_nat.sh from .env):
